@@ -4,42 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>Link & Block Extractor</title>
+    <title>Structured Snippet Extractor</title>
 </head>
 <body class="bg-slate-900 text-slate-200 p-4 md:p-10 min-h-screen font-sans">
-    <div class="max-w-7xl mx-auto space-y-6">
+    <div class="max-w-7xl mx-auto space-y-8">
         <header>
-            <h1 class="text-3xl font-bold text-white tracking-tight">Snippet <span class="text-blue-500">Scraper</span></h1>
-            <p class="text-slate-400 text-sm mt-1">Extract URLs, UTMs, and Jinja <code>{{block}}</code> snippets instantly.</p>
+            <h1 class="text-3xl font-black text-white tracking-tight uppercase">Segmented <span class="text-blue-500">Extractor</span></h1>
+            <p class="text-slate-400 text-sm mt-1">Organize up to 25 code blocks. Track links and Jinja blocks by snippet name.</p>
         </header>
 
-        <textarea id="inputCode" class="w-full h-64 p-4 bg-slate-800 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm shadow-inner placeholder-slate-500" placeholder="Paste your HTML or Jinja code here..."></textarea>
-        
-        <button onclick="extract()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition-all active:scale-95">Extract All Data</button>
-
-        <div id="results" class="grid lg:grid-cols-3 gap-6 hidden">
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                <h2 class="text-blue-400 font-bold uppercase text-xs tracking-widest mb-4 flex justify-between">
-                    <span>Anchor Tags</span>
-                    <span id="aCount" class="text-slate-500">0</span>
-                </h2>
-                <ul id="aLinks" class="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar"></ul>
-            </div>
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                <h2 class="text-emerald-400 font-bold uppercase text-xs tracking-widest mb-4 flex justify-between">
-                    <span>All href Attributes</span>
-                    <span id="allCount" class="text-slate-500">0</span>
-                </h2>
-                <ul id="allHrefs" class="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar"></ul>
-            </div>
-            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
-                <h2 class="text-purple-400 font-bold uppercase text-xs tracking-widest mb-4 flex justify-between">
-                    <span>Jinja Blocks</span>
-                    <span id="blockCount" class="text-slate-500">0</span>
-                </h2>
-                <ul id="blockSnippets" class="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar"></ul>
+        <div id="inputContainer" class="space-y-6">
+            <div class="snippet-group bg-slate-800/40 p-5 rounded-2xl border border-slate-700 space-y-4">
+                <div class="flex items-center gap-4">
+                    <span class="bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded">01</span>
+                    <input type="text" class="snippet-name flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Snippet Name (e.g., Header Section, Campaign A)">
+                </div>
+                <textarea class="snippet-code w-full h-32 p-4 bg-slate-900 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-xs placeholder-slate-600" placeholder="Paste HTML/Jinja code here..."></textarea>
             </div>
         </div>
+
+        <div class="flex flex-wrap gap-4 sticky bottom-6 z-50 bg-slate-900/80 backdrop-blur p-4 rounded-2xl border border-slate-800 shadow-2xl">
+            <button onclick="addSnippet()" id="addBtn" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-6 rounded-xl transition-all flex items-center gap-2 border border-slate-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+                <span>Add Another Snippet</span>
+            </button>
+            <button onclick="processAll()" class="bg-blue-600 hover:bg-blue-500 text-white font-black py-3 px-12 rounded-xl shadow-lg transition-all active:scale-95 text-lg uppercase flex-1">
+                Generate Separated Reports
+            </button>
+        </div>
+
+        <hr class="border-slate-800">
+
+        <div id="resultsContainer" class="space-y-12 pb-20"></div>
     </div>
 
     <style>
@@ -48,47 +44,103 @@
     </style>
 
     <script>
+        let snippetCount = 1;
+
+        function addSnippet() {
+            if (snippetCount >= 25) return;
+            snippetCount++;
+            
+            const container = document.getElementById('inputContainer');
+            const div = document.createElement('div');
+            div.className = "snippet-group bg-slate-800/40 p-5 rounded-2xl border border-slate-700 space-y-4 relative";
+            div.innerHTML = `
+                <button onclick="this.parentElement.remove()" class="absolute top-4 right-4 text-slate-500 hover:text-red-500">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <div class="flex items-center gap-4">
+                    <span class="bg-slate-700 text-white text-[10px] font-bold px-2 py-1 rounded">${snippetCount.toString().padStart(2, '0')}</span>
+                    <input type="text" class="snippet-name flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500" placeholder="Snippet Name">
+                </div>
+                <textarea class="snippet-code w-full h-32 p-4 bg-slate-900 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-xs"></textarea>
+            `;
+            container.appendChild(div);
+            if (snippetCount === 25) document.getElementById('addBtn').classList.add('hidden');
+        }
+
         async function copyText(text, btn) {
             try {
                 await navigator.clipboard.writeText(text);
-                const originalInner = btn.innerHTML;
+                const original = btn.innerHTML;
                 btn.innerHTML = `<svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
-                setTimeout(() => { btn.innerHTML = originalInner; }, 1500);
-            } catch (err) { console.error('Copy failed', err); }
+                setTimeout(() => btn.innerHTML = original, 1000);
+            } catch (err) { console.error(err); }
         }
 
-        function extract() {
-            const code = document.getElementById('inputCode').value;
-            const resultsDiv = document.getElementById('results');
-            
-            const aRegex = /<a\s+[^>]*href=["']([^"']*)["']/gi;
-            const allRegex = /href=["']([^"']*)["']/gi;
-            const blockRegex = /{{block\(["'][^"']*["']\)}}/gi;
+        function processAll() {
+            const groups = document.querySelectorAll('.snippet-group');
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = ''; // Clear previous
 
-            const getUniqueMatches = (regex, isCaptureGroup = true) => {
-                const matches = Array.from(code.matchAll(regex), m => (isCaptureGroup ? m[1] : m[0]).trim());
-                return [...new Set(matches.filter(x => x.length > 0))];
-            };
+            groups.forEach((group, index) => {
+                const name = group.querySelector('.snippet-name').value || `Snippet ${index + 1}`;
+                const code = group.querySelector('.snippet-code').value;
 
-            const render = (list, containerId, countId) => {
-                const container = document.getElementById(containerId);
-                document.getElementById(countId).innerText = `${list.length} unique`;
-                
-                container.innerHTML = list.length ? list.map(item => `
-                    <li class="flex items-center justify-between gap-3 text-[10px] bg-slate-900/50 p-2 rounded border border-slate-700/50 hover:border-blue-500/30">
-                        <span class="truncate text-slate-300 font-mono" title="${item}">${item}</span>
-                        <button onclick="copyText('${item.replace(/'/g, "\\'")}', this)" class="shrink-0 p-1 hover:bg-slate-700 rounded text-slate-400 transition-colors">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
-                        </button>
-                    </li>
-                `).join('') : '<li class="text-slate-500 italic text-xs text-center py-4">None found</li>';
-            };
+                if (!code.trim()) return;
 
-            render(getUniqueMatches(aRegex), 'aLinks', 'aCount');
-            render(getUniqueMatches(allRegex), 'allHrefs', 'allCount');
-            render(getUniqueMatches(blockRegex, false), 'blockSnippets', 'blockCount');
+                const aRegex = /<a\s+[^>]*href=["']([^"']*)["']/gi;
+                const allRegex = /href=["']([^"']*)["']/gi;
+                const blockRegex = /{{block\(["'][^"']*["']\)}}/gi;
 
-            resultsDiv.classList.remove('hidden');
+                const extract = (regex, isCapture = true) => {
+                    const matches = Array.from(code.matchAll(regex), m => (isCapture ? m[1] : m[0]).trim());
+                    return [...new Set(matches.filter(x => x.length > 0))];
+                };
+
+                const aLinks = extract(aRegex);
+                const allHrefs = extract(allRegex);
+                const blocks = extract(blockRegex, false);
+
+                const section = document.createElement('div');
+                section.className = "space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500";
+                section.innerHTML = `
+                    <div class="flex items-center gap-3 border-l-4 border-blue-500 pl-4 py-1">
+                        <h2 class="text-xl font-bold text-white">${name}</h2>
+                        <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">ID: SCR-0${index + 1}</span>
+                    </div>
+                    <div class="grid lg:grid-cols-3 gap-4">
+                        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50">
+                            <h3 class="text-blue-400 text-[10px] font-black uppercase mb-3 flex justify-between">Anchor Links <span>${aLinks.length}</span></h3>
+                            <ul class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">${renderList(aLinks)}</ul>
+                        </div>
+                        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50">
+                            <h3 class="text-emerald-400 text-[10px] font-black uppercase mb-3 flex justify-between">All hrefs <span>${allHrefs.length}</span></h3>
+                            <ul class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">${renderList(allHrefs)}</ul>
+                        </div>
+                        <div class="bg-slate-800/60 p-4 rounded-xl border border-slate-700/50">
+                            <h3 class="text-purple-400 text-[10px] font-black uppercase mb-3 flex justify-between">Jinja Blocks <span>${blocks.length}</span></h3>
+                            <ul class="space-y-2 max-h-64 overflow-y-auto custom-scrollbar">${renderList(blocks)}</ul>
+                        </div>
+                    </div>
+                `;
+                resultsContainer.appendChild(section);
+            });
+
+            if (resultsContainer.innerHTML === '') {
+                resultsContainer.innerHTML = '<p class="text-center text-slate-500 italic">No code found to process.</p>';
+            }
+            resultsContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function renderList(items) {
+            if (!items.length) return '<li class="text-slate-600 text-[10px] italic">No items</li>';
+            return items.map(item => `
+                <li class="flex items-center justify-between gap-2 bg-slate-900/50 p-2 rounded border border-slate-700/50 group">
+                    <span class="truncate text-[10px] font-mono text-slate-300" title="${item}">${item}</span>
+                    <button onclick="copyText('${item.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', this)" class="shrink-0 p-1 hover:bg-slate-700 rounded text-slate-500 transition-colors">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                    </button>
+                </li>
+            `).join('');
         }
     </script>
 </body>

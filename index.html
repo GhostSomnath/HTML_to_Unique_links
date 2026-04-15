@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Link Scraper</title>
+</head>
+<body class="bg-slate-900 text-slate-200 p-4 md:p-10 min-h-screen">
+    <div class="max-w-5xl mx-auto space-y-6">
+        <header>
+            <h1 class="text-3xl font-bold text-white tracking-tight">Link <span class="text-blue-500">Extractor</span></h1>
+            <p class="text-slate-400 text-sm mt-1">Paste HTML, CSS, or JS to sniff out every URL.</p>
+        </header>
+
+        <textarea id="inputCode" class="w-full h-64 p-4 bg-slate-800 border border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm shadow-inner" placeholder="Paste your code here..."></textarea>
+        
+        <button onclick="extract()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-all active:scale-95">Fetch Links</button>
+
+        <div id="results" class="grid md:grid-cols-2 gap-6 hidden">
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                <h2 class="text-blue-400 font-bold uppercase text-xs tracking-widest mb-3">Anchor Tags (&lt;a href&gt;)</h2>
+                <ul id="aLinks" class="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar"></ul>
+            </div>
+            <div class="bg-slate-800 p-5 rounded-xl border border-slate-700">
+                <h2 class="text-emerald-400 font-bold uppercase text-xs tracking-widest mb-3">All href Attributes</h2>
+                <ul id="allHrefs" class="space-y-2 max-h-96 overflow-y-auto pr-2 custom-scrollbar"></ul>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+
+    <script>
+        function extract() {
+            const code = document.getElementById('inputCode').value;
+            const resultsDiv = document.getElementById('results');
+            const aList = document.getElementById('aLinks');
+            const allList = document.getElementById('allHrefs');
+
+            // Regex patterns
+            const aRegex = /<a\s+[^>]*href=["'](.*?)["']/gi;
+            const allRegex = /href=["'](.*?)["']/gi;
+
+            const getMatches = (regex) => {
+                const matches = [...code.matchAll(regex)].map(m => m[1]);
+                return [...new Set(matches)]; // Unique links only
+            };
+
+            const render = (list, container) => {
+                container.innerHTML = list.length 
+                    ? list.map(link => `<li class="text-xs bg-slate-900/50 p-2 rounded border border-slate-700 truncate hover:text-blue-400 cursor-default" title="${link}">${link}</li>`).join('')
+                    : '<li class="text-slate-500 italic text-sm text-center py-4">No links detected</li>';
+            };
+
+            render(getMatches(aRegex), aList);
+            render(getMatches(allRegex), allList);
+
+            resultsDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
